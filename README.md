@@ -2,7 +2,17 @@
 
 This program will download collaboratively edited files from Google Drive to your local computer. (Note: Google Drive is considered the source of truth; upload is not implemented)
 
-To use, create a sync_config.json file listing the local filenames and the Google Drive file IDs of the files you want to keep on your filesystem, and copy the `DocsSync` binary into the folder, then run as ./DocsSync.
+## Build
+
+    $ go get github.com/riking/DocsSync
+
+    # Add to PATH (optional)
+    $ ln -s ~/bin/DocsSync $GOPATH/bin/DocsSync
+    $ sudo ln -s /usr/local/bin/DocsSync $GOPATH/bin/DocsSync
+
+## Usage
+
+To use, create a sync\_config.json file listing the local filenames and the Google Drive file IDs of the files you want to keep on your filesystem, and copy the `DocsSync` binary into the folder, then run as ./DocsSync.
 
 TODO: Currently, you are required to set up your own https://console.developers.google.com project , because I don't want to be punished if someone goes and hits the quota. The key shown in the Git history is not valid, don't bother.
 
