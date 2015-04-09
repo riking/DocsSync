@@ -51,7 +51,6 @@ The program will create a .rftoken file. **This file gives full (read) access** 
 ### Feature Wishlist
 
  - What to do for the OAuth client secret for a 'desktop application'?
-   Until I have a solution for this, please don't do bad things with my OAuth app.
  - Check the modtime of the local and Drive files to only download if necessary
  - Pick a better name
  - Allow you to drag & drop the folder onto the binary or pick a folder with the command line
