@@ -18,8 +18,10 @@ import (
 )
 
 type SyncConfig struct {
-	Directory string      `json:"directory"`
-	Files     []SyncEntry `json:"files"`
+	Directory    string      `json:"directory"`
+	ClientID     string      `json:"client_id"`
+	ClientSecret string      `json:"client_secret"`
+	Files        []SyncEntry `json:"files"`
 }
 type SyncEntry struct {
 	Filename string `json:"filename"`
@@ -31,9 +33,9 @@ type MyTokenSource struct {
 }
 
 var config = &oauth2.Config{
-	ClientID:     "317332152277-8ok83fe9voumrdjc5u0vvm6v65mmaqh1.apps.googleusercontent.com",
-	ClientSecret: "JyrPp7UeHm16vFgHiQ5mq6XW",
-	Scopes:       []string{drive.DriveScope},
+	ClientID:     "",
+	ClientSecret: "",
+	Scopes:       []string{drive.DriveReadonlyScope},
 	RedirectURL:  "urn:ietf:wg:oauth:2.0:oob",
 	Endpoint: oauth2.Endpoint{
 		AuthURL:  "https://accounts.google.com/o/oauth2/auth",
@@ -169,6 +171,9 @@ func main() {
 		log.Fatalf("An error occured reading the config file: %v\n", err)
 	}
 	os.Chdir(syncConf.Directory)
+	
+	config.ClientID = syncConf.ClientID
+	config.ClientSecret = syncConf.ClientSecret
 
 	ctx := context.TODO()
 	token, err := authorize(ctx)
