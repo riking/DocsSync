@@ -33,6 +33,8 @@ type MyTokenSource struct {
 	context context.Context
 }
 
+type SkippedDownload struct{}
+
 var config = &oauth2.Config{
 	ClientID:     "",
 	ClientSecret: "",
@@ -48,6 +50,10 @@ var _ = &http.Transport{}
 var _ = reflect.TypeOf
 
 var syncConf SyncConfig
+
+func (s SkippedDownload) Error() string {
+	return "Download skipped"
+}
 
 func readConfig() error {
 	confFile, err := os.Open("sync_config.json")
@@ -164,7 +170,7 @@ func downloadFile(
 
 	if remoteModtime.Before(localModtime) {
 		log.Printf("File %s is up to date\n", entry.Filename)
-		return nil
+		return &SkippedDownload{}
 	}
 
 	// Set up the download
@@ -220,7 +226,11 @@ func main() {
 		go func(entry SyncEntry) {
 			err2 := downloadFile(entry, fileSvc, httpClient)
 			if err2 != nil {
-				log.Printf("ERR %s", entry.Filename)
+				if _, ok := err2.(*SkippedDownload); ok {
+					log.Printf("IGN %s", entry.Filename)
+				} else {
+					log.Printf("ERR %s", entry.Filename)
+				}
 			} else {
 				log.Printf("OK  %s", entry.Filename)
 			}
