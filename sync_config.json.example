@@ -1,0 +1,15 @@
+{
+  "directory": "/home/you/Documents/something",
+  "files": [
+    {
+      "filename": "Taxes/2014.rtf",
+      "file_id": "18vxbNiXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX2exhY",
+      "mime": "application/rtf"
+    },
+    {
+      "filename": "someCode/foo.go",
+      "file_id": "1mDtDe7XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXqMzy8",
+      "mime": "text/plain"
+    }
+  ]
+}
