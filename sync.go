@@ -26,6 +26,7 @@ type SyncConfig struct {
 type SyncEntry struct {
 	Filename string `json:"filename"`
 	FileId   string `json:"file_id"`
+	Mime     string `json:"mime"`
 }
 
 type MyTokenSource struct {
