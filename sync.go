@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/skratchdot/open-golang/open"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	drive "google.golang.org/api/drive/v2"
@@ -10,7 +11,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"github.com/skratchdot/open-golang/open"
 	"reflect"
 	"sync"
 	"syscall"
@@ -133,6 +133,7 @@ func downloadFile(
 	fileSvc *drive.FilesService,
 	httpClient *http.Client) error {
 
+	// Get the Drive file information
 	fileRequest := fileSvc.Get(entry.FileId)
 	dFile, err := fileRequest.Do()
 	if err != nil {
@@ -140,7 +141,33 @@ func downloadFile(
 		return err
 	}
 
-	download_url := dFile.ExportLinks["text/plain"]
+	// Open the destination file
+	outFile, err := os.OpenFile(entry.Filename, os.O_WRONLY, 0666)
+	if err != nil {
+		log.Printf("File %s - Could not open: %v\n", entry.Filename, err)
+		return err
+	}
+	defer outFile.Close()
+
+	// Check the remote vs local modification times
+	remoteModtime, err := time.Parse(time.RFC3339, dFile.ModifiedDate)
+	if err != nil {
+		log.Panicf("Could not parse time in response - file %s string %s\n", entry.Filename, dFile.ModifiedDate)
+	}
+	outInfo, err := outFile.Stat()
+	if err != nil {
+		log.Printf("File %s - Could not stat: %v\n", entry.Filename, err)
+		return err
+	}
+	localModtime := outInfo.ModTime()
+
+	if remoteModtime.Before(localModtime) {
+		log.Printf("File %s is up to date\n", entry.Filename)
+		return nil
+	}
+
+	// Set up the download
+	download_url := dFile.ExportLinks[entry.Mime]
 	log.Printf("Downloading %s from %s\n", entry.Filename, entry.FileId)
 
 	resp, err := httpClient.Get(download_url)
@@ -150,13 +177,7 @@ func downloadFile(
 	}
 	defer resp.Body.Close()
 
-	outFile, err := os.OpenFile(entry.Filename, os.O_WRONLY, 0666)
-	if err != nil {
-		log.Printf("File %s - Could not open: %v\n", entry.Filename, err)
-		return err
-	}
-	defer outFile.Close()
-
+	// Finish the download
 	_, err = io.Copy(outFile, resp.Body)
 	if err != nil {
 		log.Printf("File %s - write error: %v\n", entry.Filename, err)
@@ -166,22 +187,24 @@ func downloadFile(
 }
 
 func main() {
+	// Read the config, move to that directory
 	err := readConfig()
 	if err != nil {
 		log.Fatalf("An error occured reading the config file: %v\n", err)
 	}
 	os.Chdir(syncConf.Directory)
-	
+
 	config.ClientID = syncConf.ClientID
 	config.ClientSecret = syncConf.ClientSecret
 
+	// Get authorization
 	ctx := context.TODO()
 	token, err := authorize(ctx)
 	if err != nil {
 		log.Fatalf("An error occured with authorization: %v\n", err)
 	}
 
-	// Create a new authorized Drive client.
+	// Create a new Drive client object.
 	svc, err := drive.New(config.Client(ctx, token))
 	if err != nil {
 		log.Fatalf("An error occurred creating Drive client: %v\n", err)
@@ -191,6 +214,7 @@ func main() {
 	httpClient := config.Client(ctx, token)
 	wg := &sync.WaitGroup{}
 
+	// Download the files
 	for _, entry := range syncConf.Files {
 		go func(entry SyncEntry) {
 			err2 := downloadFile(entry, fileSvc, httpClient)
@@ -203,6 +227,6 @@ func main() {
 		}(entry)
 		wg.Add(1)
 	}
-	
+
 	wg.Wait()
 }
